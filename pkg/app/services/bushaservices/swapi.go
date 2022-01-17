@@ -116,6 +116,30 @@ func GetAllSwapiCharacters(swapiResponse chan httpresponses.HttpResponse) {
 	baseUrl := strings.TrimSpace(os.Getenv("SWAPIBASEURL"))
 	getUrl := baseUrl + "/people/"
 
+	redisConn, err := dbconfig.RedisConn()
+	defer redisConn.Close()
+	if err != nil {
+		swapiResponse <- resp
+		return
+	}
+
+	allSwapiCharactersString, err := redis.String(redisConn.Do("GET", "getallswapicharacters"))
+	if err == nil {
+		b := []byte(allSwapiCharactersString)
+		allSwapiCharactersStruct := filmsmodel.People{}
+		err = json.Unmarshal(b, &allSwapiCharactersStruct)
+		if err != nil {
+			swapiResponse <- resp
+			return
+		}
+		resp.Success = true
+		resp.Data = allSwapiCharactersStruct
+		resp.Message = "success fetching all swapi films"
+
+		swapiResponse <- resp
+		return
+	}
+
 	request, err := http.NewRequest("GET", getUrl, nil)
 	if err != nil {
 		resp.Success = false
