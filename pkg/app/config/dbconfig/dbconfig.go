@@ -4,14 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
+	"os"
+	"strings"
 )
 
-const (
-	host     = "localhost"
+var (
+	host     = strings.TrimSpace(os.Getenv("DATABASE_HOST_SWAPI")) //"localhost"
 	port     = 5432
-	user     = "postgres"
-	password = "Welcome2000!"
-	dbname   = "bushadb"
+	user     = strings.TrimSpace(os.Getenv("DATABASE_HOST_USER"))  //"postgres"
+	password = strings.TrimSpace(os.Getenv("DATABASE_PWD_SWAPI"))  //"Welcome2000!"
+	dbname   = strings.TrimSpace(os.Getenv("DATABASE_NAME_SWAPI")) //"bushadb"
 )
 
 // DB set up
