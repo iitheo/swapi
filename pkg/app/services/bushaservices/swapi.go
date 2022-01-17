@@ -3,6 +3,8 @@ package bushaservices
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gomodule/redigo/redis"
+	"github.com/iitheo/theobusha/pkg/app/config/dbconfig"
 	"github.com/iitheo/theobusha/pkg/app/config/httpresponses"
 	"github.com/iitheo/theobusha/pkg/app/models/filmsmodel"
 	"io/ioutil"
@@ -18,6 +20,30 @@ func GetAllSwapiFilms(swapiResponse chan httpresponses.HttpResponse) {
 	)
 	baseUrl := strings.TrimSpace(os.Getenv("SWAPIBASEURL"))
 	getUrl := baseUrl + "/films/"
+
+	redisConn, err := dbconfig.RedisConn()
+	defer redisConn.Close()
+	if err != nil {
+		swapiResponse <- resp
+		return
+	}
+
+	allSwapiFilmsString, err := redis.String(redisConn.Do("GET", "getallswapifilms"))
+	if err == nil {
+		b := []byte(allSwapiFilmsString)
+		allSwapiFilmsStruct := filmsmodel.FilmsVM{}
+		err = json.Unmarshal(b, &allSwapiFilmsStruct)
+		if err != nil {
+			swapiResponse <- resp
+			return
+		}
+		resp.Success = true
+		resp.Data = allSwapiFilmsStruct
+		resp.Message = "success fetching all swapi films"
+
+		swapiResponse <- resp
+		return
+	}
 
 	request, err := http.NewRequest("GET", getUrl, nil)
 	if err != nil {
@@ -60,6 +86,17 @@ func GetAllSwapiFilms(swapiResponse chan httpresponses.HttpResponse) {
 		resp.Success = false
 		resp.Message = err.Error()
 		resp.Error = err.Error()
+		swapiResponse <- resp
+		return
+	}
+
+	b, err := json.Marshal(&listOfFilms)
+	if err != nil {
+		swapiResponse <- resp
+		return
+	}
+	_, err = redisConn.Do("SET", "getallswapifilms", string(b))
+	if err != nil {
 		swapiResponse <- resp
 		return
 	}

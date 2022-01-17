@@ -3,6 +3,7 @@ package dbconfig
 import (
 	"database/sql"
 	"fmt"
+	"github.com/gomodule/redigo/redis"
 	_ "github.com/lib/pq"
 	"os"
 	"strings"
@@ -29,4 +30,9 @@ func DBConn() (myDBConn *sql.DB, myErr error) {
 	err = db.Ping()
 
 	return db, err
+}
+
+func RedisConn() (redis.Conn, error) {
+	c, err := redis.DialURL(os.Getenv("REDIS_URL"), redis.DialTLSSkipVerify(true))
+	return c, err
 }
