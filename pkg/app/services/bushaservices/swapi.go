@@ -185,6 +185,17 @@ func GetAllSwapiCharacters(swapiResponse chan httpresponses.HttpResponse) {
 		return
 	}
 
+	b, err := json.Marshal(&listOfCharacters)
+	if err != nil {
+		swapiResponse <- resp
+		return
+	}
+	_, err = redisConn.Do("SET", "getallswapicharacters", string(b))
+	if err != nil {
+		swapiResponse <- resp
+		return
+	}
+
 	resp.Success = true
 	resp.Message = fmt.Sprintf("characters successfully fetched")
 	resp.Data = listOfCharacters
